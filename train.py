@@ -32,6 +32,12 @@ if __name__ == "__main__":
         help="path to the dataset",
     )
     parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        help="experiment name",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default="cuda",
@@ -76,7 +82,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--steps",
         type=int,
-        default=100000,
+        default=150000,
         help="train steps",
     )
     parser.add_argument(
@@ -216,7 +222,7 @@ if __name__ == "__main__":
     ema = partial(accumulate, decay=0.5 ** (args.batch / (10 * 1000)))
 
     logdir = os.path.join(
-        args.logdir,
+        args.logdir, args.name,
         datetime.now().strftime('%Y%m%d_%H%M%S')
     )
     os.makedirs(os.path.join(logdir, "samples"))
@@ -228,8 +234,10 @@ if __name__ == "__main__":
     # train loop
     for step in (iterator := tqdm(range(args.steps), initial=start_step)):
 
-        step = step + start_step
-
+        step = step + start_step + 1
+        if step > args.steps:
+            break
+        
         real = next(loader).to(device)
 
         # D
@@ -244,7 +252,7 @@ if __name__ == "__main__":
         d_loss.backward()
         d_optim.step()
 
-        if step % args.d_reg_every == 0:
+        if (step - start_step - 1)  % args.d_reg_every == 0:
             real.requires_grad = True
             real_pred = discriminator(augment(real))
             r1 = d_reg_loss_fn(real_pred, real) * args.d_reg

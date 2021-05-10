@@ -49,6 +49,7 @@ def get_adversarial_losses(type="hinge"):
     ADV_LOSSES = {
         "hinge": hinge_loss,
         "non_saturating": non_saturating_loss,
+        "lsgan": lsgan_loss,
     }
 
     assert type.lower() in ADV_LOSSES, "Adversarial loss {type} is not implemented"
