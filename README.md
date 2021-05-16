@@ -46,6 +46,6 @@ Learned subspace: L1 D2
 
 **Note** 
 
-Training configurations are different from the original implementation 
+Default training configurations are different from the original implementation 
 
 Tested on python 3.8 + torch 1.8.1
