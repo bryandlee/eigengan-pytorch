@@ -14,6 +14,7 @@ from model import Generator, Discriminator
 from dataset import Dataset, infinite_loader
 from augmentation import DiffAugment
 from loss import get_adversarial_losses, get_regularizer
+from fid import get_fid_fn
 
 
 def accumulate(model1, model2, decay=0.999):
@@ -35,6 +36,7 @@ if __name__ == "__main__":
         "-n",
         "--name",
         type=str,
+        default="ffhq",
         help="experiment name",
     )
     parser.add_argument(
@@ -62,6 +64,11 @@ if __name__ == "__main__":
         help="checkpoint save period",
     )
     parser.add_argument(
+        "--fid",
+        action="store_true",
+        help="compute fid before saving checkpoints",
+    )
+    parser.add_argument(
         "--size",
         type=int,
         default=256,
@@ -70,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch",
         type=int,
-        default=64,
+        default=16,
         help="batch size",
     )
     parser.add_argument(
@@ -82,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--steps",
         type=int,
-        default=150000,
+        default=1000000,
         help="train steps",
     )
     parser.add_argument(
@@ -148,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--d_reg_every",
         type=int,
-        default=4,
+        default=16,
         help="discriminator lazy regularization period",
     )
     args = parser.parse_args()
@@ -207,9 +214,10 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
     ])
+    dataset = Dataset(args.path, transform)
     loader = infinite_loader(
         DataLoader(
-            Dataset(args.path, transform),
+            dataset,
             batch_size=args.batch,
             shuffle=True,
             drop_last=True,
@@ -220,6 +228,8 @@ if __name__ == "__main__":
     # train utils
     augment = DiffAugment(policy='color,translation,cutout', p=0.6)
     ema = partial(accumulate, decay=0.5 ** (args.batch / (10 * 1000)))
+    if args.fid:
+        compute_fid = get_fid_fn(dataset, device=device)
 
     logdir = os.path.join(
         args.logdir, args.name,
@@ -297,8 +307,7 @@ if __name__ == "__main__":
                 )
 
         if step % args.ckpt_every == 0:
-            torch.save(
-                {
+            ckpt = {
                     "step": step,
                     "args": args,
                     "g": generator.state_dict(),
@@ -306,6 +315,15 @@ if __name__ == "__main__":
                     "g_ema": g_ema.state_dict(),
                     "g_optim": g_optim.state_dict(),
                     "d_optim": d_optim.state_dict(),
-                },
+            }
+
+            if args.fid:
+                fid_score = compute_fid(g_ema)
+                tb_writer.add_scalar("metric/FID", fid_score, step)
+                ckpt["fid"] = fid_score
+
+            torch.save(
+                ckpt,
                 os.path.join(logdir, "checkpoints", f"{str(step).zfill(7)}.pt"),
             )
+

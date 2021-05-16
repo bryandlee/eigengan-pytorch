@@ -55,7 +55,7 @@ if __name__ == "__main__":
     ).to(device).eval()
     g_ema.load_state_dict(ckpt["g_ema"])
 
-    logdir = os.path.join(args.logdir, str(ckpt["step"]).zfill(7))
+    logdir = os.path.join(args.logdir, train_args.name, str(ckpt["step"]).zfill(7))
     os.makedirs(logdir)
     print(f"result path: {logdir}")
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
                 imgs = []
                 for offset in offsets:
                     _zs = zs.clone()
-                    _zs[:, i_layer, i_dim] += offset
+                    _zs[:, i_layer, i_dim] = offset
                     with torch.no_grad():
                         img = g_ema((es, _zs)).cpu()
                         img = torch.cat([_img for _img in img], dim=1)

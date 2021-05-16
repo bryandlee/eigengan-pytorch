@@ -203,8 +203,8 @@ class Generator(nn.Module):
             zs = torch.zeros_like(zs) * (1 - truncation) + zs * truncation
         return es, zs
 
-    def sample(self, batch: int):
-        return self.forward(self.sample_latents(batch))
+    def sample(self, batch: int, truncation=1.0):
+        return self.forward(self.sample_latents(batch, truncation=truncation))
 
     def forward(self, latents: tuple):
         input, zs = latents
