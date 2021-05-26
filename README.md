@@ -49,3 +49,8 @@ Learned subspace: L1 D2
 Default training configurations are different from the original implementation 
 
 Tested on python 3.8 + torch 1.8.1
+
+
+**Issue**
+
+Some of the subspace layers seem to collapse and have no effect on the resulting images as the training proceeds and FID get betters.
