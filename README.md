@@ -53,4 +53,4 @@ Tested on python 3.8 + torch 1.8.1
 
 **Issue**
 
-Some of the subspace layers seem to collapse (does not contribute to the output) as the training proceeds and FID get betters.
+Some of the subspace layers seem to collapse (does not contribute to the output) as the training proceeds and FID gets better.
